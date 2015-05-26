@@ -25,6 +25,7 @@ class Solver {
   // The main entry of the solver function. In default, iter will be zero. Pass
   // in a non-zero iter number to resume training for a pre-trained net.
   virtual void Solve(const char* resume_file = NULL);
+  virtual void Solve(int steps, const char* resume_file = NULL);
   inline void Solve(const string resume_file) { Solve(resume_file.c_str()); }
   void Step(int iters);
   // The Restore function implements how one should restore the solver to a
@@ -37,6 +38,27 @@ class Solver {
     return test_nets_;
   }
   int iter() { return iter_; }
+  string SnapshotReturnName() {
+	  Snapshot();
+	  NetParameter net_param;
+	  string filename(param_.snapshot_prefix());
+	  const int kBufferSize = 20;
+	  char iter_str_buffer[kBufferSize];
+	  // Add one to iter_ to get the number of iterations that have completed.
+	  snprintf(iter_str_buffer, kBufferSize, "_iter_%d", iter_ + 1);
+	  filename += iter_str_buffer;
+	  return filename + ".solverstate";
+  }
+  virtual const vector<shared_ptr<Blob<Dtype> > >& history() = 0;
+  float TestLoss(const float alpha, const int test_net_id = 0);
+  void TestCheck(const string & netName);
+  float TrainLoss(const float alpha, const int epoch_Iter = 500, const int test_net_id = 0);
+  void setBaseLR(const float learningRate) {
+    param_.set_base_lr(learningRate);
+  }
+  float getBaseLR() {
+	return param_.base_lr();
+  }
 
  protected:
   // Get the update value for the current iteration.
